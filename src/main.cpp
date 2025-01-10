@@ -2,8 +2,6 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <WiFi.h>
-#include <ArduinoOTA.h>
-#include "ota_setup.h"
 
 // Replace with your network credentials
 const char* ssid = "Galaxy A21sA57C";
@@ -18,6 +16,17 @@ DallasTemperature sensors(&oneWire);
 // WiFi server on port 80
 WiFiServer server(80);
 
+void setupWiFi(const char* ssid, const char* password) {
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi connected");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());  // Print the ESP32 IP address
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -30,16 +39,10 @@ void setup() {
   // Start the web server
   server.begin();
 
-  // Set up OTA
-  setupOTA();
-
   Serial.println("Server started, waiting for clients...");
 }
 
 void loop() {
-  // Handle OTA updates
-  ArduinoOTA.handle();
-
   // Check for client connection
   WiFiClient client = server.available();
   if (client) {
@@ -59,7 +62,7 @@ void loop() {
       sensors.requestTemperatures();
       float tempC = sensors.getTempCByIndex(0);
       String jsonResponse = "{\"temperature\":" + String(tempC) + "}";
-      
+
       client.print("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
       client.print(jsonResponse);
     } else {
