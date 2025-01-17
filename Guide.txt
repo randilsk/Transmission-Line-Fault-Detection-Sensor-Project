@@ -1,0 +1,36 @@
+Transmission Line Fault Detection Using ESP32
+
+This project demonstrates a fault detection system for transmission lines using an ESP32 microcontroller and various sensors. The system is designed to simulate transmission lines and detect faults such as overcurrent, short circuits, open circuits, and fire hazards.
+
+Features
+
+Sensor Integration: Utilizes ACS712 Current Sensor, ZMPT101B Voltage Sensor, KY-026 Flame Sensor, and DS18B20 Temperature Sensor to monitor line conditions.
+Fault Detection: Identifies faults like overcurrent, open circuits, short circuits, and fire hazards.
+Real-time Monitoring: Data from sensors is processed by the ESP32 and transmitted to a web-based dashboard.
+LCD Display: Includes a QAPASS LCD display for local data visualization.
+Wi-Fi Communication: ESP32 sends alerts and data to a monitoring system via Wi-Fi.
+
+Components
+ESP32 WROOM 32
+ACS712 Current Sensor
+ZMPT101B Voltage Sensor
+KY-026 Flame Sensor
+DS18B20 Temperature Sensor
+QAPASS LCD Display
+Step-down transformers and buck converters for power regulation
+
+Setup Instructions
+Connect the sensors and the ESP32 as outlined in the project's documentation.
+Use the Arduino IDE to program the ESP32 with the provided code.
+Set up the web-based dashboard to receive and display data.
+Simulate faults using resistors or switches to test the detection system.
+
+How It Works
+The ESP32 reads data from the sensors and applies fault detection algorithms.
+Detected faults are communicated to the dashboard and displayed on the LCD.
+The system supports real-time monitoring and alerts for various fault conditions.
+
+Repository Contents
+/docs: Detailed documentation and wiring diagrams.
+/code: ESP32 source code and libraries.
+/dashboard: Frontend code for the monitoring dashboard.
