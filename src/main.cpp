@@ -1,165 +1,215 @@
 #include <Arduino.h>
-// #include <OneWire.h>
-// #include <DallasTemperature.h>
-// #include <WiFi.h>
+#include <SPIFFS.h>
+#include <WiFi.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <math.h>
 
-// // Replace with your network credentials
-// const char* ssid = "Galaxy A21sA57C";
-// const char* password = "abcd12345";
+// Wi-Fi credentials
+const char* ssid = "iPhone";
+const char* password = "00022222334";
 
-// // Data wire is connected to GPIO4 on the ESP32
-// #define ONE_WIRE_BUS 4
+// DS18B20 sensor setup
+#define ONE_WIRE_BUS 4  // Pin where the DS18B20 is connected
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
 
+// Voltage sensor setup
+#define ANALOG_IN_PIN  32           // ESP32 pin GPIO32 (ADC1_CHANNEL_4) connected to voltage sensor
+#define REF_VOLTAGE    3.3
+#define ADC_RESOLUTION 4096.0
+#define R1             30000.0 // Resistor values in voltage sensor (in ohms)
+#define R2             7500.0  // Resistor values in voltage sensor (in ohms)
+#define NUM_SAMPLES    10
 
-// OneWire oneWire(ONE_WIRE_BUS);
-// DallasTemperature sensors(&oneWire);
+// Current sensor setup
+const int currentPin = 34;  // Pin connected to ACS712 sensor
+const int numSamples = 500;  // Number of samples to take for both offset calibration and RMS calculation
+float offsetVoltage = 2.5;    // Initial guess for no-current offset (for 5V VCC)
+float sensitivity = 0.1;      // Sensitivity in V/A (100mV/A for the 20A version)
+float voltageSum = 0.0;       // For offset calibration
 
-// // WiFi server on port 80
-// WiFiServer server(80);
+WiFiServer server(80);  // Web server on port 80
 
-// void setupWiFi(const char* ssid, const char* password) {
-//   WiFi.begin(ssid, password);
-//   while (WiFi.status() != WL_CONNECTED) {
-//     delay(500);
-//     Serial.print(".");
-//   }
-//   Serial.println("\nWiFi connected");
-//   Serial.print("IP address: ");
-//   Serial.println(WiFi.localIP());  // Print the ESP32 IP address
-// }
+// Variables for averaging voltage readings
+float voltageBuffer[NUM_SAMPLES] = {0.0};
+int bufferIndex = 0;
 
-// void setup() {
-//   Serial.begin(115200);
+// Flame sensor and buzzer setup
+#define FLAME_SENSOR_PIN 27 // Flame sensor pin (GPIO 27)
+#define BUZZER_PIN 19       // Buzzer pin (GPIO 19)
 
-//   // Connect to Wi-Fi
-//   setupWiFi(ssid, password);
+// Function to calculate the average voltage
+float getAverageVoltage() {
+  float sum = 0.0;
+  for (int i = 0; i < NUM_SAMPLES; i++) {
+    sum += voltageBuffer[i];
+  }
+  return sum / NUM_SAMPLES;
+}
 
-//   // Start the DS18B20 sensor
-//   sensors.begin();
-
-//   // Start the web server
-//   server.begin();
-
-//   Serial.println("Server started, waiting for clients...");
-// }
-
-// void loop() {
-//   // Check for client connection
-//   WiFiClient client = server.available();
-//   if (client) {
-//     Serial.println("New client connected");
-
-//     // Wait for the client's request
-//     while (client.connected() && !client.available()) {
-//       delay(1);
-//     }
-
-//     // Read the request
-//     String request = client.readStringUntil('\r');
-//     client.flush();
-
-//     // Serve temperature as JSON
-//     if (request.indexOf("/temperature") != -1) {
-//       sensors.requestTemperatures();
-//       float tempC = sensors.getTempCByIndex(0);
-//       String jsonResponse = "{\"temperature\":" + String(tempC) + "}";
-
-//       client.print("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
-//       client.print(jsonResponse);
-//     } else {
-//       // Serve the main HTML page
-//       String html = R"rawliteral(
-//         <!DOCTYPE html>
-//         <html>
-//         <head>
-//           <title>Temperature Monitor</title>
-//           <style>
-//             body {
-//               font-family: Arial, sans-serif;
-//               background-color: #f4f4f9;
-//               color: #333;
-//               display: flex;
-//               justify-content: center;
-//               align-items: center;
-//               height: 100vh;
-//               margin: 0;
-//             }
-//             .container {
-//               text-align: center;
-//               background: #ffffff;
-//               padding: 20px;
-//               border-radius: 10px;
-//               box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-//               width: 80%;
-//               max-width: 400px;
-//             }
-//             h1 {
-//               font-size: 1.8em;
-//               color: #007BFF;
-//               margin-bottom: 20px;
-//             }
-//             .temp {
-//               font-size: 2em;
-//               color: #e63946;
-//               margin: 10px 0;
-//             }
-//             footer {
-//               margin-top: 20px;
-//               font-size: 0.8em;
-//               color: #888;
-//             }
-//           </style>
-//           <script>
-//             function updateTemperature() {
-//               fetch('/temperature')
-//                 .then(response => response.json())
-//                 .then(data => {
-//                   document.getElementById('temperature').textContent = data.temperature + ' °C';
-//                 })
-//                 .catch(error => console.error('Error:', error));
-//             }
-//             setInterval(updateTemperature, 1000);
-//           </script>
-//         </head>
-//         <body>
-//           <div class="container">
-//             <h1>Real-Time Temperature Sensor</h1>
-//             <div class="temp" id="temperature">Loading...</div>
-//             <footer>&copy; 2025 by DEIE</footer>
-//           </div>
-//         </body>
-//         </html>
-//       )rawliteral";
-
-//       client.print("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
-//       client.print(html);
-//     }
-
-//     // Close the connection
-//     client.stop();
-//     Serial.println("Client disconnected");
-//   }
-// }
-
-
-#define FLAME_SENSOR_PIN 21 // GPIO pin connected to DO of KY-026
-#define BUZZER_PIN 22       // GPIO pin connected to the buzzer
+// Function to setup Wi-Fi
+void setupWiFi(const char* ssid, const char* password) {
+  Serial.print("Connecting to Wi-Fi");
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi connected!");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());  // Print the ESP32 IP address
+}
 
 void setup() {
-  Serial.begin(115200);           // Initialize serial communication
-  pinMode(FLAME_SENSOR_PIN, INPUT); // Set the flame sensor pin as input
-  pinMode(BUZZER_PIN, OUTPUT);     // Set the buzzer pin as output
-  Serial.println("Flame Sensor with Buzzer Test Initialized...");
+  Serial.begin(115200);
+
+  // Initialize SPIFFS
+  if (!SPIFFS.begin(true)) {
+    Serial.println("An error occurred while mounting SPIFFS");
+    return;
+  }
+
+  // Connect to Wi-Fi
+  setupWiFi(ssid, password);
+
+  // Start DS18B20 sensor
+  sensors.begin();
+
+  // Configure ADC pin
+  pinMode(ANALOG_IN_PIN, INPUT);
+  analogSetAttenuation(ADC_11db);  // Set attenuation for ADC input
+
+  // Initialize voltage buffer
+  for (int i = 0; i < NUM_SAMPLES; i++) {
+    voltageBuffer[i] = 0.0;
+  }
+
+  // Initialize Flame sensor and Buzzer pins
+  pinMode(FLAME_SENSOR_PIN, INPUT);  // Flame sensor pin as input
+  pinMode(BUZZER_PIN, OUTPUT);       // Buzzer pin as output
+
+  // Start the web server
+  server.begin();
+  Serial.println("Server started, waiting for clients...");
 }
 
 void loop() {
-  int flameStatus = digitalRead(FLAME_SENSOR_PIN); // Read the digital output
-  if (flameStatus == HIGH) { // LOW indicates flame detected
-    Serial.println("Flame detected!");
-    digitalWrite(BUZZER_PIN, HIGH); // Turn on the buzzer
+  WiFiClient client = server.available();
+  if (client) {
+    Serial.println("New client connected");
+
+    // Wait for the client's request
+    while (client.connected() && !client.available()) {
+      delay(1);
+    }
+
+    String request = client.readStringUntil('\r');
+    client.flush();
+
+    if (request.indexOf("/temperature") != -1) {
+      // Serve JSON temperature data
+      sensors.requestTemperatures();
+      float tempC = sensors.getTempCByIndex(0);
+      String jsonResponse = "{\"temperature\":" + String(tempC) + "}";
+      
+      // Add CORS headers
+      client.print("HTTP/1.1 200 OK\r\n");
+      client.print("Content-Type: application/json\r\n");
+      client.print("Access-Control-Allow-Origin: *\r\n");
+      client.print("\r\n");
+      client.print(jsonResponse);
+    } else if (request.indexOf("/voltage") != -1) {
+      // Read ADC value and calculate voltage
+      int adc_value = analogRead(ANALOG_IN_PIN);
+      delay(1000);
+      float voltage_adc = ((float)adc_value * REF_VOLTAGE) / ADC_RESOLUTION;
+      float voltage_in = voltage_adc * (R1 + R2) / R2;
+
+      // Add voltage to buffer for averaging
+      voltageBuffer[bufferIndex] = voltage_in;
+      bufferIndex = (bufferIndex + 1) % NUM_SAMPLES;
+
+      // Get the average voltage
+      float averageVoltage = getAverageVoltage();
+
+      String jsonResponse = "{\"voltage\":" + String(voltage_in, 2) + "}";
+
+      // Add CORS headers
+      client.print("HTTP/1.1 200 OK\r\n");
+      client.print("Content-Type: application/json\r\n");
+      client.print("Access-Control-Allow-Origin: *\r\n");
+      client.print("\r\n");
+      client.print(jsonResponse);
+    } else if (request.indexOf("/current") != -1) {
+      // Offset Calibration
+      voltageSum = 0.0;
+      for (int i = 0; i < numSamples; i++) {
+        int sensorValue = analogRead(currentPin);
+        float voltage = sensorValue * (5.0 / 8000.0); // Convert ADC value to voltage
+        voltageSum += voltage;
+        delay(1);
+      }
+      offsetVoltage = voltageSum / numSamples;  // Calculate the average offset voltage
+
+      // RMS Current Calculation
+      float sumSquared = 0.0;
+      for (int i = 0; i < numSamples; i++) {
+        int sensorValue = analogRead(currentPin);
+        float voltage = sensorValue * (5.0 / 8000.0);  // Convert ADC value to voltage
+        float voltageDifference = voltage - offsetVoltage; // Difference from offset
+        sumSquared += voltageDifference * voltageDifference;  // Sum of squares
+        delay(1);
+      }
+
+      float rmsVoltage = sqrt(sumSquared / numSamples);
+      float rmsCurrent = rmsVoltage / sensitivity;
+
+      String jsonResponse = "{\"current\":" + String(rmsCurrent, 2) + "}";
+
+      // Add CORS headers
+      client.print("HTTP/1.1 200 OK\r\n");
+      client.print("Content-Type: application/json\r\n");
+      client.print("Access-Control-Allow-Origin: *\r\n");
+      client.print("\r\n");
+      client.print(jsonResponse);
+    } else if (request.indexOf("/flame") != -1) {
+      // Get flame sensor status
+      int flameStatus = digitalRead(FLAME_SENSOR_PIN);
+      if (flameStatus == HIGH) {
+    digitalWrite(BUZZER_PIN, HIGH);  // Turn on the buzzer when flame is detected
   } else {
-    Serial.println("No flame detected.");
-    digitalWrite(BUZZER_PIN, LOW); // Turn off the buzzer
+    digitalWrite(BUZZER_PIN, LOW);   // Turn off the buzzer when no flame is detected
   }
-  delay(500); // Adjust delay for desired frequency
+
+      String jsonResponse = "{\"flame\":" + String(flameStatus) + "}";
+
+      // Add CORS headers
+      client.print("HTTP/1.1 200 OK\r\n");
+      client.print("Content-Type: application/json\r\n");
+      client.print("Access-Control-Allow-Origin: *\r\n");
+      client.print("\r\n");
+      client.print(jsonResponse);
+    } else {
+      // Serve HTML page
+      File file = SPIFFS.open("/index.html", "r");
+      if (!file) {
+        client.print("HTTP/1.1 500 Internal Server Error\r\n\r\n");
+        Serial.println("Failed to open index.html");
+      } else {
+        client.print("HTTP/1.1 200 OK\r\n");
+        client.print("Content-Type: text/html\r\n");
+        client.print("Access-Control-Allow-Origin: *\r\n");
+        client.print("\r\n");
+        while (file.available()) {
+          client.write(file.read());
+        }
+        file.close();
+      }
+    }
+
+    // Close the connection
+    client.stop();
+    Serial.println("Client disconnected");
+  }
 }

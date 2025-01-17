@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- ======= CSS ======= -->
+    <link rel="stylesheet" href="index.css">
+     
+    <!-- ======= Iconscout CSS ======= -->
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+
+    <title>Line Fault Detection Dashboard Panel</title>
+
+    <style>
+        body.dark {
+            background-color: #1e1e1e;
+            color: #ffffff;
+        }
+
+        nav.dark {
+            background-color: #2c2c2c;
+        }
+
+        .menu-items .link-name.dark {
+            color: #ffffff;
+        }
+
+        .warning {
+            background-color: #ff4d4d !important;
+            color: #ffffff !important;
+        }
+
+        .warning span.number1 {
+            font-size: 48px;
+            font-weight: bold;
+            color: #ff0000; /* Red color for warning */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6); /* Make the warning value more prominent */
+        }
+
+        .warning-popup {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background-color: #ff4d4d;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 16px;
+            display: none; /* Initially hidden */
+            animation: slideIn 2s forwards;
+        }
+
+        @keyframes slideIn {
+            0% {
+                transform: translateX(100%);
+            }
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        .hover-effect {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 5px rgba(255, 77, 77, 0.7);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 15px rgba(255, 77, 77, 1);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 5px rgba(255, 77, 77, 0.7);
+            }
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #2c2c2c;
+            color: white;
+        }
+
+        .mode-toggle {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .mode-toggle .switch {
+            width: 30px;
+            height: 15px;
+            background-color: #ddd;
+            border-radius: 15px;
+            position: relative;
+            margin-left: 10px;
+        }
+
+        .mode-toggle .switch::before {
+            content: '';
+            width: 15px;
+            height: 15px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            transition: transform 0.3s;
+        }
+
+        body.dark .mode-toggle .switch::before {
+            transform: translateX(15px);
+        }
+    </style>
+
+    <script>
+        let warningPopupDisplayed = false;
+
+        async function updateTemperature() {
+    try {
+        const response = await fetch('http://172.20.10.2/temperature');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        const temperature = parseFloat(data.temperature);
+        const temperatureCard = document.querySelector(".temperature-card");
+        const temperatureValue = document.getElementById("temperature-value");
+        const warningPopup = document.getElementById("warning-popup");
+
+        if (!isNaN(temperature)) {
+            if (temperature > 30) {
+                temperatureCard.classList.add("warning", "hover-effect");
+                temperatureValue.textContent = `${temperature.toFixed(2)} °C - WARNING`;
+
+                // Show the warning popup if not already displayed
+                if (!warningPopupDisplayed) {
+                    warningPopup.textContent = `WARNING: Temperature is too high! (${temperature.toFixed(2)} °C)`;
+                    warningPopup.style.display = 'block';
+                    warningPopupDisplayed = true;
+                }
+            } else {
+                temperatureCard.classList.remove("warning", "hover-effect");
+                temperatureValue.textContent = `${temperature.toFixed(2)} °C`;
+
+                // Hide the warning popup if the value is below the threshold
+                if (warningPopupDisplayed) {
+                    warningPopup.style.display = 'none';
+                    warningPopupDisplayed = false;
+                }
+            }
+        } else {
+            temperatureValue.textContent = "Invalid Data";
+        }
+        
+    } catch (error) {
+        console.error("Error fetching temperature:", error);
+        document.getElementById("temperature-value").textContent = "Error";
+    }
+}
+
+        async function updateVoltage() {
+    try {
+        const response = await fetch('http://172.20.10.2/voltage');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        const voltage = parseFloat(data.voltage);
+        const voltageCard = document.querySelector(".cards .card:nth-child(3)");
+        const voltageValue = document.getElementById("voltage-value");
+        const warningPopup = document.getElementById("warning-popup");
+
+        if (!isNaN(voltage)) {
+            if (voltage > 10.5) {
+                voltageCard.classList.add("warning", "hover-effect");
+                voltageValue.textContent = `${voltage.toFixed(2)} V  WARNING`;
+
+                // Show the warning popup if not already displayed
+                if (!warningPopupDisplayed) {
+                    warningPopup.textContent = `WARNING: Voltage is too high! (${voltage.toFixed(2)} V)`;
+                    warningPopup.style.display = 'block';
+                    warningPopupDisplayed = true;
+                }
+            } else {
+                voltageCard.classList.remove("warning", "hover-effect");
+                voltageValue.textContent = `${voltage.toFixed(2)} V`;
+
+                // Hide the warning popup if the value is below the threshold
+                if (warningPopupDisplayed) {
+                    warningPopup.style.display = 'none';
+                    warningPopupDisplayed = false;
+                }
+            }
+        } else {
+            voltageValue.textContent = "Invalid Data";
+        }
+        
+    } catch (error) {
+        console.error("Error fetching voltage:", error);
+        document.getElementById("voltage-value").textContent = "Error";
+    }
+}
+        async function updateCurrent() {
+            try {
+                const response = await fetch('http://172.20.10.2/current');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                const current = parseFloat(data.current);
+                const currentCard = document.querySelector(".cards .card:nth-child(2)");
+                const currentValue = document.getElementById("current-value");
+                const warningPopup = document.getElementById("warning-popup");
+
+                if (!isNaN(current)) {
+                    if (current > 0.4) {
+                        currentCard.classList.add("warning", "hover-effect");
+                        currentValue.textContent = `${current.toFixed(2)} A  WARNING`;
+
+                        // Show the warning popup if not already displayed
+                        if (!warningPopupDisplayed) {
+                            warningPopup.textContent = `WARNING: Current is too high! (${current.toFixed(2)} A)`;
+                            warningPopup.style.display = 'block';
+                            warningPopupDisplayed = true;
+                        }
+                    } else {
+                        currentCard.classList.remove("warning", "hover-effect");
+                        currentValue.textContent = `${current.toFixed(2)} A`;
+
+                        if (warningPopupDisplayed) {
+                    warningPopup.style.display = 'none';
+                    warningPopupDisplayed = false;
+                }
+                    }
+                } else {
+                    currentValue.textContent = "Invalid Data";
+                }
+               
+            } catch (error) {
+                console.error("Error fetching current:", error);
+                document.getElementById("current-value").textContent = "Error";
+            }
+        }
+
+        async function updateFlame() {
+            try {
+                const response = await fetch('http://172.20.10.2/flame');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                const flame = parseFloat(data.flame);
+                const flameCard = document.querySelector(".cards .card:nth-child(4)");
+                const flameValue = document.getElementById("flame-value");
+
+                if (!isNaN(flame)) {
+                    if (flame > 200) { // Example threshold
+                        flameCard.classList.add("warning", "hover-effect");
+                        flameValue.textContent = `${flame.toFixed(2)}  WARNING`;
+                    } else {
+                        flameCard.classList.remove("warning", "hover-effect");
+                        flameValue.textContent = `${flame.toFixed(2)}`;
+                    }
+                } else {
+                    flameValue.textContent = "Invalid Data";
+                }
+            } catch (error) {
+                console.error("Error fetching flame data:", error);
+                document.getElementById("flame-value").textContent = "Error";
+            }
+        }
+        async function updateFlame() {
+            try {
+                const response = await fetch('http://172.20.10.2/flame');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                const flame = parseFloat(data.flame);
+                const flameCard = document.querySelector(".cards .card:nth-child(4)");
+                const flameValue = document.getElementById("flame-value");
+                
+                if (!isNaN(flame)) {
+                    if (flame === 1) {
+                        flameCard.classList.add("warning");
+                        flameValue.textContent = `HAZARD - Flame detected!`;
+                    } else {
+                        flameCard.classList.remove("warning");
+                        flameValue.textContent = `NORMAL - No flame detected.`;
+                    }
+                } else {
+                    flameValue.textContent = "Invalid Data";
+                }
+            } catch (error) {
+                console.error("Error fetching flame status:", error);
+                document.getElementById("flame-value").textContent = "Error";
+            }
+        }
+
+        setInterval(updateTemperature, 1000);
+        setInterval(updateVoltage, 2000);
+        setInterval(updateCurrent, 2000);
+        setInterval(updateFlame, 3000);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const body = document.body;
+            const modeToggle = document.querySelector(".mode-toggle");
+            const isDarkMode = localStorage.getItem("dark-mode") === "true";
+
+            if (isDarkMode) {
+                body.classList.add("dark");
+            }
+
+            modeToggle.addEventListener("click", () => {
+                body.classList.toggle("dark");
+                localStorage.setItem("dark-mode", body.classList.contains("dark"));
+            });
+        });
+    </script>
+</head>
+<body>
+    <!-- <section class="dashboard">
+        <div class="top">
+            <div class="mode-toggle">
+                <i class="uil uil-moon"></i>
+                <span class="switch"></span>
+            </div>
+        </div> -->
+        <div class="dash-content">
+            <div class="overview">
+                <div class="title">
+                    <i class="uil uil-tachometer-fast-alt"></i>
+                    <span class="text">TRANSMISSION LINE FAULT DETECTION SYSTEM</span>
+                </div>
+                <div class="cards">
+                    <div class="card temperature-card">
+                        <div class="card2">
+                            <span class="text1">Temperature</span>
+                            <span class="number1" id="temperature-value">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card2">
+                            <span class="text1">Current</span>
+                            <span class="number1" id="current-value">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card2">
+                            <span class="text1">Voltage</span>
+                            <span class="number1" id="voltage-value">Loading...</span>
+                        </div>
+                    </div>
+                    <!-- New Flame Card -->
+                    <div class="card">
+                        <div class="card2">
+                            <span class="text1">Hazzard</span>
+                            <span class="number1" id="flame-value">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Warning Popup -->
+    <div id="warning-popup" class="warning-popup" style="display: none;"></div>
+</body>
+</html>

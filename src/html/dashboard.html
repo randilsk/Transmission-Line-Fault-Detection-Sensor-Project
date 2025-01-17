@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!----======== CSS ======== -->
+    <link rel="stylesheet" href="dashboard.css" />
+
+    <!----===== Iconscout CSS ===== -->
+    <link
+      rel="stylesheet"
+      href="https://unicons.iconscout.com/release/v4.0.0/css/line.css"
+    />
+
+    <title>Line Fault Detection Dashboard Panel</title>
+  </head>
+  <body>
+    <nav>
+      <div class="logo-name">
+        <div class="logo-image">
+          <img src="images/logo.png" alt="" />
+        </div>
+
+        <span class="logo_name">Dashboard</span>
+      </div>
+
+      <div class="menu-items">
+        <ul class="nav-links">
+          <li>
+            <a href="#">
+              <i class="uil uil-estate"></i>
+              <span class="link-name">Dashboard</span>
+            </a>
+          </li>
+        </ul>
+
+        <ul class="nav-links">
+          <li class="mode">
+            <a href="#">
+              <i class="uil uil-moon"></i>
+              <span class="link-name">Dark Mode</span>
+            </a>
+
+            <div class="mode-toggle">
+              <span class="switch"></span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <section class="dashboard">
+      <div class="top">
+        <i class="uil uil-bars sidebar-toggle"></i>
+
+        <div class="search-box">
+          <i class="uil uil-search"></i>
+          <input type="text" placeholder="Search here..." />
+        </div>
+      </div>
+
+      <div class="dash-content">
+        <div class="overview">
+          <div class="title">
+            <i class="uil uil-tachometer-fast-alt"></i>
+            <span class="text">Dashboard</span>
+          </div>
+
+          <div class="cards">
+            <!-- Temperature Card -->
+            <div class="card">
+              <div class="card2">
+                <span class="text1">Temperature</span>
+                <span class="number1">10&#8451;</span>
+              </div>
+            </div>
+
+            <!-- Current Flow Card -->
+            <div class="card">
+              <div class="card2">
+                <span class="text1">Current</span>
+                <span class="number1">20A</span>
+              </div>
+            </div>
+
+            <!-- Voltage Card -->
+            <div class="card">
+              <div class="card2">
+                <span class="text1">Voltage</span>
+                <span class="number1">10V</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="activity">
+          <div class="title">
+            <i class="uil uil-clock-three"></i>
+            <span class="text">Recent Details</span>
+          </div>
+
+          <div class="activity-data">
+            <div class="data names">
+              <span class="data-title">Time</span>
+            </div>
+            <div class="data email">
+              <span class="data-title">Current</span>
+            </div>
+            <div class="data joined">
+              <span class="data-title">Temperature</span>
+            </div>
+            <div class="data type">
+              <span class="data-title">Voltage</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script src="script.js"></script>
+  </body>
+</html>
